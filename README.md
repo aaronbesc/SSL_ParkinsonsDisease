@@ -1,7 +1,7 @@
 
 # Parkinson's Disease
 
-This project is part of the Smart Systems Laboratory of the University of Florida, and it aims to perform assessments on Parkinson's patients using machine learning approach.
+This project is part of the Smart Systems Laboratory of the University of Florida, and it aims to perform assessments on Parkinson's patients using a machine learning approach.
 
 
 ## Run Locally
