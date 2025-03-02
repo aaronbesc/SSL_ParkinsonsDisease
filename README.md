@@ -3,7 +3,6 @@
 
 This project is part of the Smart Systems Laboratory of the University of Florida, and it aims to perform assessments on Parkinson's patients using a machine learning approach.
 
-
 ## Run Locally
 
 Clone the project
@@ -36,15 +35,9 @@ Install dependencies
 pip install -r requirements.txt
 ```
 
-
 ## Contributing
 
-Contributions are always welcome!
-
-See `contributing.md` for ways to get started.
-
-Please adhere to this project's `code of conduct`.
-
+Contributions are welcomed. See `CONTRIBUTING.md` for ways to get started.
 
 ## Authors
 - Forcha, Peter [@githubuser](https://github.com/xxx)
