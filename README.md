@@ -1,7 +1,7 @@
 
-# Parkinson's Disease
+# Parkinson's Disease Movement Data
 
-This project is part of the Smart Systems Laboratory of the University of Florida, and it aims to perform assessments on Parkinson's patients using a machine learning approach.
+This project is part of the Smart Systems Laboratory at the University of Florida and focuses on developing a machine learning-based assessment tool for Parkinson's disease. The objective is to analyze patient movement data to detect and quantify tremors, enabling more precise assessments. By leveraging computer vision and data-driven methodologies, the system tracks motion patterns and applies feature extraction techniques to evaluate motor symptoms.
 
 ## Run Locally
 
