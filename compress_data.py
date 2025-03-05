@@ -23,7 +23,7 @@ def temporal_resampling(x, y, target_length=100):
 
     return resampled_x, resampled_y
 
-def compress_motion_data(input_file="motion_data.json", output_file="compressed_motion_data.json", target_length=100):
+def compress_motion_data(input_file="motion_data_2.json", output_file="compressed_motion_data_2.json", target_length=100):
     with open(input_file, "r") as f:
         data = json.load(f)
 

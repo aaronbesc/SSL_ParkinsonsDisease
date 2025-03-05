@@ -45,7 +45,7 @@ def compare_motion_data(file1, file2):
 
 if __name__ == "__main__":
     # Modify these filenames to test with actual compressed JSON files
-    file1 = "compressed_motion_data_1.json"
-    file2 = "compressed_motion_data_2.json"
+    file1 = "motion_data.json"
+    file2 = "motion_data_1.json"
 
     compare_motion_data(file1, file2)
