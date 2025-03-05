@@ -54,7 +54,7 @@ def main():
         "nose_y": nose_y
     }
 
-    with open("motion_data.json", "w") as f:
+    with open("motion_data_1.json", "w") as f:
         json.dump(data, f, indent=4)
 
     print("Motion data saved to motion_data.json")
