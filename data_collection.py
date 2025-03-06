@@ -12,6 +12,7 @@ def main():
 
     nose_x = []
     nose_y = []
+    velocity_magnitude = []
     frame_count = 0
 
     with mp_pose.Pose(min_detection_confidence=0.5,
@@ -36,6 +37,12 @@ def main():
                 height, width, _ = frame.shape
                 nx = nose_landmark.x * width
                 ny = nose_landmark.y * height
+                if frame_count > 0:
+                    dx = nx - nose_x[-1]
+                    dy = ny - nose_y[-1]
+                    velocity_magnitude.append(np.sqrt(dx**2 + dy**2))
+                else:
+                    velocity_magnitude.append(0)
 
                 nose_x.append(nx)
                 nose_y.append(ny)
@@ -51,7 +58,8 @@ def main():
     data = {
         "frames": list(range(frame_count)),
         "nose_x": nose_x,
-        "nose_y": nose_y
+        "nose_y": nose_y,
+        "velocity_magnitude": velocity_magnitude
     }
 
     with open("motion_data_1.json", "w") as f:
@@ -61,7 +69,7 @@ def main():
 
     frames = np.arange(frame_count)
 
-    fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    fig, ax = plt.subplots(3, 1, figsize=(8, 9), sharex=True)
 
     ax[0].plot(frames, nose_x, label='Nose X Position', color='blue')
     ax[0].set_ylabel('X Position (pixels)')
@@ -73,6 +81,12 @@ def main():
     ax[1].set_xlabel('Frame Count')
     ax[1].legend()
     ax[1].grid(True)
+
+    ax[2].plot(frames, velocity_magnitude, label='Velocity', color='green')
+    ax[2].set_ylabel('Velocity Magnitude')
+    ax[2].set_xlabel('Frame Count')
+    ax[2].legend()
+    ax[2].grid(True)
 
     plt.suptitle('Nose Position Over Time')
     plt.show()
