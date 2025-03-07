@@ -62,7 +62,7 @@ def main():
         "velocity_magnitude": velocity_magnitude
     }
 
-    with open("motion_data_1.json", "w") as f:
+    with open("motion_data_2.json", "w") as f:
         json.dump(data, f, indent=4)
 
     print("Motion data saved to motion_data.json")
@@ -83,7 +83,7 @@ def main():
     ax[1].grid(True)
 
     ax[2].plot(frames, velocity_magnitude, label='Velocity', color='green')
-    ax[2].set_ylabel('Velocity Magnitude')
+    ax[2].set_ylabel('Velocity Magnitude(pixels/second)')
     ax[2].set_xlabel('Frame Count')
     ax[2].legend()
     ax[2].grid(True)
