@@ -15,7 +15,7 @@ objpoints = []  # 3D points
 imgpoints = []  # 2D points
 
 # Load images
-images = glob.glob('*.jpg')
+images = glob.glob('images/*.jpg')
 
 for fname in images:
     img = cv.imread(fname)
@@ -40,7 +40,7 @@ cv.destroyAllWindows()
 ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
 # Undistortion process
-img = cv.imread('left12.jpg')
+img = cv.imread('images/left12.jpg')
 h, w = img.shape[:2]
 newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
 
