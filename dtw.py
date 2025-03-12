@@ -16,8 +16,8 @@ def compare_motion_data(file1, file2):
     """Load, compare, and visualize motion data from two JSON files using DTW."""
     
     # Load both datasets
-    frames1, nose_x1, nose_y1 = load_motion_data(file1)
-    frames2, nose_x2, nose_y2 = load_motion_data(file2)
+    frames1, nose_x1, nose_y1, velocity1 = load_motion_data(file1)
+    frames2, nose_x2, nose_y2, velocity2 = load_motion_data(file2)
 
     # Calculate DTW distance and best path for X motion
     distance_x, paths_x = dtw.warping_paths(nose_x1, nose_x2, use_c=False)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         print("Usage: python compare_motion_dtw.py <file1.json> <file2.json>")
         sys.exit(1)
 
-    file1 = sys.argv[1]
-    file2 = sys.argv[2]
+    file1 = 'motion_data_1.json'
+    file2 = 'motion_data_2.json'
 
     compare_motion_data(file1, file2)
