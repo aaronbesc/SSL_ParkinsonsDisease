@@ -83,7 +83,7 @@ def main():
     ax[1].grid(True)
 
     ax[2].plot(frames, velocity_magnitude, label='Velocity', color='green')
-    ax[2].set_ylabel('Velocity Magnitude (pixels/second)')
+    ax[2].set_ylabel('Velocity Magnitude(pixels/second)')
     ax[2].set_xlabel('Frame Count')
     ax[2].legend()
     ax[2].grid(True)
