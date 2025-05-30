@@ -24,6 +24,8 @@ logs/
 # Data files
 jsons/
 recordings/
+*.pkl
+*.txt
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
