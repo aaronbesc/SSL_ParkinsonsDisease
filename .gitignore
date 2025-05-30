@@ -22,8 +22,8 @@ logs/
 *.log
 
 # Data files
-motion_data.json
-compressed_motion_data.json
+jsons/
+recordings/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
