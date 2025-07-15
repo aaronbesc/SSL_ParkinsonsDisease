@@ -14,7 +14,7 @@ Thumbs.db
 
 # IDEs and Editors
 .vscode/
-.idea/
+../.idea/
 *.sublime-workspace
 
 # Logs
