@@ -11,4 +11,27 @@ interface VideoBoxProps{
     className?: string;
 }
 
-export default function
+export default function VideoBox({
+    src,
+    controls = true,
+    autoPlay = false,
+    loop = false,
+    muted = true,
+    className = '',
+}: VideoBoxProps){
+    return (
+        <video
+            src = {src}
+            controls = {controls}
+            autoPlay = {autoPlay}
+            loop = {loop}
+            muted = {muted}
+            className = {className}
+
+            style={{
+                width: '100%', // might have to use 2rem
+                height: 'auto'
+            }}
+        />
+    )
+}
