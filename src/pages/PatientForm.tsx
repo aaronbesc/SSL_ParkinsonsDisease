@@ -32,34 +32,85 @@ const PatientForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.firstName || !formData.lastName || !formData.recordNumber || !formData.age || !formData.severity) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    // Here you would normally send data to your backend
+  if (!formData.firstName || !formData.lastName || !formData.recordNumber || !formData.age || !formData.severity) {
     toast({
-      title: isEditing ? "Patient Updated" : "Patient Created",
-      description: isEditing 
-        ? `${formData.firstName} ${formData.lastName}'s information has been updated.`
-        : `${formData.firstName} ${formData.lastName} has been added to the system.`,
+      title: "Validation Error",
+      description: "Please fill in all required fields.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  const payload = {
+    name: `${formData.firstName} ${formData.lastName}`,
+    age: Number(formData.age),
+    height: formData.height,  // now treated as string
+    weight: formData.weight,  // now treated as string
+    lab_results: {
+      notes: formData.labResults || "",
+    },
+    doctors_notes: formData.doctorNotes || "",
+    severity: formData.severity, // should already be "low", "medium", or "high"
+  };
+
+  try {
+    const url = isEditing
+      ? `http://localhost:8000/patients/${id}`
+      : `http://localhost:8000/patients/`;
+
+    const method = isEditing ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
 
-    // Navigate back to patient list or patient details
-    if (isEditing) {
-      navigate(`/patient/${id}`);
-    } else {
-      navigate('/');
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw data;
     }
-  };
+
+    toast({
+      title: isEditing ? "Patient Updated" : "Patient Created",
+      description: `${formData.firstName} ${formData.lastName} has been ${isEditing ? 'updated' : 'added'}.`,
+    });
+
+    navigate(isEditing ? `/patient/${id}` : '/');
+  } catch (error) {
+    console.error("Submission error:", error);
+
+    let message = 'Unknown error';
+
+    if (typeof error === 'string') {
+      message = error;
+    } else if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      if ('detail' in error && Array.isArray(error.detail)) {
+        message = error.detail
+          .map((e: any) => `${e.loc?.join('.') || 'field'}: ${e.msg}`)
+          .join('\n');
+      } else {
+        message = JSON.stringify(error);
+      }
+    }
+
+    toast({
+      title: "Error",
+      description: message,
+      variant: "destructive",
+    });
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,9 +226,9 @@ const PatientForm = () => {
                       <SelectValue placeholder="Select severity level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Mild">Mild</SelectItem>
-                      <SelectItem value="Moderate">Moderate</SelectItem>
-                      <SelectItem value="Severe">Severe</SelectItem>
+                      <SelectItem value="low">Mild</SelectItem>
+                      <SelectItem value="medium">Moderate</SelectItem>
+                      <SelectItem value="high">Severe</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

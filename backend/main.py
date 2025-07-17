@@ -18,7 +18,7 @@ app = FastAPI(title="Patient Management API")
 # Configure CORS to allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production to your frontend's URL
+    allow_origins=["http://localhost:8080"],  # Adjust this in production to your frontend's URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,8 +29,8 @@ app.add_middleware(
 class PatientCreate(BaseModel):
     name: str
     age: int = Field(..., ge=0, le=120)
-    height: float = Field(..., ge=0, le=300)
-    weight: float = Field(..., ge=0, le=500)
+    height: str = Field(..., min_length=1)
+    weight: str = Field(..., min_length=1)
     lab_results: Optional[Dict] = Field(default_factory=dict)
     doctors_notes: Optional[str] = ""
     severity: str = Field("low", pattern="^(low|medium|high)$")
@@ -39,8 +39,8 @@ class PatientCreate(BaseModel):
 class PatientUpdate(BaseModel):
     name: Optional[str] = None
     age: Optional[int] = Field(None, ge=0, le=120)
-    height: Optional[float] = Field(None, ge=0, le=300)
-    weight: Optional[float] = Field(None, ge=0, le=500)
+    height: Optional[str] = None
+    weight: Optional[str] = None
     lab_results: Optional[Dict] = None
     doctors_notes: Optional[str] = None
     severity: Optional[str] = Field(None, pattern="^(low|medium|high)$")
