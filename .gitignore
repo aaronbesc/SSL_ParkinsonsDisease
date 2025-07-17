@@ -1,36 +1,24 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Virtual environment
-venv/
-.env/
-
-# System-specific
-.DS_Store
-Thumbs.db
-
-# IDEs and Editors
-.vscode/
-.idea/
-*.sublime-workspace
-
 # Logs
-logs/
+logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Data files
-jsons/
-recordings/
-*.pkl
-*.txt
+node_modules
+dist
+dist-ssr
+*.local
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Python egg files
-*.egg-info/
-dist/
-build/
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
