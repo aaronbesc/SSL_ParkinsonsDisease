@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Square, RotateCcw, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ const VideoRecording = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
+
   const selectedTests = location.state?.selectedTests || [];
   const [currentTestIndex, setCurrentTestIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
@@ -25,16 +25,29 @@ const VideoRecording = () => {
   const totalTests = selectedTests.length;
   const progress = ((currentTestIndex + (completedTests.includes(selectedTests[currentTestIndex]) ? 1 : 0)) / totalTests) * 100;
 
-  // Mock keypoints for demonstration
-  const [keypoints] = useState([
-    { x: 150, y: 200, confidence: 0.9, label: 'head' },
-    { x: 148, y: 250, confidence: 0.85, label: 'neck' },
-    { x: 145, y: 300, confidence: 0.92, label: 'shoulder_left' },
-    { x: 155, y: 300, confidence: 0.88, label: 'shoulder_right' },
-    { x: 150, y: 400, confidence: 0.87, label: 'hip_center' },
-    { x: 140, y: 500, confidence: 0.91, label: 'knee_left' },
-    { x: 160, y: 500, confidence: 0.89, label: 'knee_right' },
-  ]);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunks = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        toast({
+          title: "Camera Access Denied",
+          description: "You need to allow camera access to record the test.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    startCamera();
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -46,36 +59,91 @@ const VideoRecording = () => {
     return () => clearInterval(interval);
   }, [isRecording, isPaused]);
 
-  const handleStartRecording = () => {
-    setIsRecording(true);
-    setIsPaused(false);
-    setRecordingTime(0);
-  };
+  const handleStartRecording = async () => {
+  setIsRecording(true);
+  setIsPaused(false);
+  setRecordingTime(0);
+
+  if (videoRef.current && videoRef.current.srcObject) {
+    recordedChunks.current = [];
+
+    const stream = videoRef.current.srcObject as MediaStream;
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+
+    mediaRecorder.ondataavailable = event => {
+      if (event.data.size > 0) {
+        recordedChunks.current.push(event.data);
+      }
+    };
+
+    mediaRecorderRef.current = mediaRecorder;
+    mediaRecorder.start();
+  }
+};
 
   const handlePauseRecording = () => {
-    setIsPaused(!isPaused);
-  };
+  if (!mediaRecorderRef.current) return;
+  if (isPaused) {
+    mediaRecorderRef.current.resume();
+  } else {
+    mediaRecorderRef.current.pause();
+  }
+  setIsPaused(!isPaused);
+};
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
-    setIsPaused(false);
-    
-    // Mark current test as completed
-    const currentTestId = selectedTests[currentTestIndex];
-    setCompletedTests(prev => [...prev, currentTestId]);
-    
-    toast({
-      title: "Recording Completed",
-      description: `${currentTest?.name} recording saved successfully.`,
-    });
-  };
+  const handleStopRecording = async () => {
+  if (!mediaRecorderRef.current) return;
+
+  return new Promise<void>((resolve) => {
+    mediaRecorderRef.current!.onstop = async () => {
+      setIsRecording(false);
+      setIsPaused(false);
+
+      const blob = new Blob(recordedChunks.current, { type: 'video/webm' });
+
+      const formData = new FormData();
+      formData.append("patient_id", id || '');
+      formData.append("test_name", currentTest?.name || 'unknown');
+      formData.append("video", blob, "recording.webm");
+
+      try {
+        const response = await fetch('http://localhost:8000/upload-video/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          toast({
+            title: "Recording Saved",
+            description: `Saved as ${data.filename}`,
+          });
+        } else {
+          throw new Error("Upload failed");
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        toast({
+          title: "Upload Error",
+          description: "Could not upload the video.",
+          variant: "destructive",
+        });
+      }
+
+      setCompletedTests(prev => [...prev, currentTest?.id || '']);
+      resolve();
+    };
+
+    mediaRecorderRef.current!.stop(); // Triggers .onstop
+  });
+};
+
 
   const handleNextTest = () => {
     if (currentTestIndex < selectedTests.length - 1) {
       setCurrentTestIndex(prev => prev + 1);
       setRecordingTime(0);
     } else {
-      // All tests completed, navigate to summary
       navigate(`/patient/${id}/video-summary/${testId}`);
     }
   };
@@ -143,9 +211,10 @@ const VideoRecording = () => {
         </div>
       </div>
 
+      {/* Body */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Test List - Right 1/3 */}
+          {/* Test List and Instructions */}
           <div className="lg:order-2 space-y-6">
             <Card>
               <CardHeader>
@@ -157,15 +226,15 @@ const VideoRecording = () => {
                     const test = AVAILABLE_TESTS.find(t => t.id === testId);
                     const isCompleted = completedTests.includes(testId);
                     const isCurrent = index === currentTestIndex;
-                    
+
                     return (
                       <div
                         key={testId}
                         className={`p-3 rounded-lg border ${
-                          isCurrent 
-                            ? 'border-primary bg-medical-light' 
-                            : isCompleted 
-                            ? 'border-success bg-success/10' 
+                          isCurrent
+                            ? 'border-primary bg-medical-light'
+                            : isCompleted
+                            ? 'border-success bg-success/10'
                             : 'border-border'
                         }`}
                       >
@@ -192,7 +261,6 @@ const VideoRecording = () => {
               </CardContent>
             </Card>
 
-            {/* Instructions */}
             <Card>
               <CardHeader>
                 <CardTitle>Instructions</CardTitle>
@@ -210,16 +278,16 @@ const VideoRecording = () => {
             </Card>
           </div>
 
-          {/* Video Feed - Left 2/3 */}
+          {/* Video Feed and Controls */}
           <div className="lg:col-span-2 lg:order-1">
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Live Video Feed</span>
                   <Badge variant="secondary" className={
-                    isRecording 
-                      ? isPaused 
-                        ? 'bg-warning text-warning-foreground' 
+                    isRecording
+                      ? isPaused
+                        ? 'bg-warning text-warning-foreground'
                         : 'bg-destructive text-destructive-foreground animate-pulse'
                       : 'bg-muted text-muted-foreground'
                   }>
@@ -228,46 +296,19 @@ const VideoRecording = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Mock Video Display */}
                 <div className="relative bg-black rounded-lg aspect-video mb-6 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <div className="text-lg font-semibold mb-2">Camera Feed</div>
-                      <div className="text-sm opacity-75">Live video would display here</div>
-                    </div>
-                  </div>
-                  
-                  {/* Keypoints Overlay */}
-                  {isRecording && !isPaused && (
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 640 480">
-                      {keypoints.map((point, index) => (
-                        <circle
-                          key={index}
-                          cx={point.x}
-                          cy={point.y}
-                          r="4"
-                          fill="#00ff00"
-                          stroke="#ffffff"
-                          strokeWidth="1"
-                          opacity={point.confidence}
-                        />
-                      ))}
-                      {/* Connect keypoints with lines */}
-                      <path
-                        d={`M ${keypoints[0]?.x} ${keypoints[0]?.y} L ${keypoints[1]?.x} ${keypoints[1]?.y} L ${keypoints[4]?.x} ${keypoints[4]?.y}`}
-                        stroke="#00ff00"
-                        strokeWidth="2"
-                        fill="none"
-                        opacity="0.7"
-                      />
-                    </svg>
-                  )}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
-                {/* Recording Controls */}
                 <div className="flex justify-center space-x-4">
                   {!isRecording ? (
-                    <Button onClick={handleStartRecording} className="bg-gradient-primary hover:bg-primary-hover">
+                    <Button onClick={handleStartRecording} className="bg-[hsl(var(--secondary))] text-black hover:bg-[hsl(var(--primary-hover))] hover:text-white">
                       <Play className="mr-2 h-4 w-4" />
                       Start Recording
                     </Button>
@@ -296,12 +337,12 @@ const VideoRecording = () => {
                       <p className="text-success font-semibold">Test Completed Successfully!</p>
                     </div>
                     {currentTestIndex < selectedTests.length - 1 ? (
-                      <Button onClick={handleNextTest} className="bg-gradient-primary hover:bg-primary-hover">
+                      <Button onClick={handleNextTest} className="bg-[hsl(var(--secondary))] text-black hover:bg-[hsl(var(--primary-hover))] hover:text-white">
                         Next Test ({currentTestIndex + 2} of {totalTests})
                       </Button>
                     ) : (
-                      <Button onClick={() => navigate(`/patient/${id}/video-summary/${testId}`)} className="bg-gradient-primary hover:bg-primary-hover">
-                        View Summary & Results
+                      <Button onClick={() => navigate(`/patient/${id}/video-summary/${testId}`)} className="bg-primary hover:bg-primary-hover">
+                        View Summary
                       </Button>
                     )}
                   </div>

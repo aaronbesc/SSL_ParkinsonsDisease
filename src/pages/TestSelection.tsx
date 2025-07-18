@@ -241,7 +241,7 @@ const TestSelection = () => {
                   <Button
                     onClick={handleStartRecording}
                     disabled={selectedTests.length === 0}
-                    className="h-24 flex-col bg-gradient-primary hover:bg-primary-hover"
+                    className="h-24 flex-col bg-[hsl(var(--secondary))] text-black hover:bg-[hsl(var(--primary-hover))] hover:text-white"
                   >
                     <Video className="h-8 w-8 mb-2" />
                     <span className="font-semibold">Record New Video</span>

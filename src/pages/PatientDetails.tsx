@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Calendar, FileText, Activity, Edit, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Patient, Test } from '@/types/patient';
+
 
 // Mock data - replace with actual data fetching
 const mockPatient: Patient = {
@@ -50,10 +51,55 @@ const mockTests: Test[] = [
   },
 ];
 
+
+
 const PatientDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const [patient] = useState<Patient>(mockPatient);
-  const [tests] = useState<Test[]>(mockTests);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tests, setTests] = useState<Test[]>([]); // Placeholder – replace with real API if available
+
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/patients/${id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Failed to fetch patient');
+        }
+
+        const [firstName, lastName] = data.patient.name.split(' ');
+
+        setPatient({
+          id: data.patient.patient_id,
+          firstName,
+          lastName,
+          recordNumber: '', // Add logic if your backend supports it
+          age: data.patient.age,
+          height: `${data.patient.height}`,
+          weight: `${data.patient.weight}`,
+          labResults: data.patient.lab_results?.notes || '',
+          doctorNotes: data.patient.doctors_notes || '',
+          severity:
+            data.patient.severity === 'low'
+              ? 'Mild'
+              : data.patient.severity === 'medium'
+              ? 'Moderate'
+              : 'Severe',
+          createdAt: new Date(), // Optional: replace with actual timestamps
+          updatedAt: new Date(),
+        });
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatient();
+  }, [id]);
 
   const getSeverityColor = (severity: Patient['severity']) => {
     switch (severity) {
@@ -81,6 +127,26 @@ const PatientDetails = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading patient data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -99,7 +165,7 @@ const PatientDetails = () => {
                   {patient.firstName} {patient.lastName}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Record: {patient.recordNumber}
+                  Record: {patient.recordNumber || 'N/A'}
                 </p>
               </div>
             </div>
@@ -121,11 +187,10 @@ const PatientDetails = () => {
         </div>
       </div>
 
+      {/* Patient Information */}
       <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Patient Information - Left Side */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Basic Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -172,7 +237,7 @@ const PatientDetails = () => {
             </Card>
           </div>
 
-          {/* Test History - Right Side */}
+          {/* Test History (placeholder for now) */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -185,12 +250,12 @@ const PatientDetails = () => {
                 <div className="space-y-4">
                   {tests.length > 0 ? (
                     tests.map((test) => (
-                      <div key={test.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                      <div key={test.id} className="border rounded-lg p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
+                          <div>
                             <h4 className="font-medium text-sm">{test.name}</h4>
-                            <div className="flex items-center text-xs text-muted-foreground mt-1">
-                              <Calendar className="mr-1 h-3 w-3" />
+                            <div className="text-xs text-muted-foreground mt-1">
+                              <Calendar className="inline-block mr-1 h-3 w-3" />
                               {test.date.toLocaleDateString()}
                             </div>
                           </div>
@@ -221,27 +286,6 @@ const PatientDetails = () => {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Available Tests</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link to={`/patient/${id}/test-selection`}>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Activity className="mr-2 h-4 w-4" />
-                    Stand and Sit Test
-                  </Button>
-                </Link>
-                <Link to={`/patient/${id}/test-selection`}>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Activity className="mr-2 h-4 w-4" />
-                    Palm Open Test
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
           </div>

@@ -1,8 +1,15 @@
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
-import uvicorn
+from datetime import datetime
+import os
+import shutil
+
+# setting up recording directory
+RECORDINGS_DIR = os.path.join(os.path.dirname(__file__), "recordings")
+os.makedirs(RECORDINGS_DIR, exist_ok=True)
 
 # Import from your patient_manager module
 from patient_manager import (
@@ -159,3 +166,50 @@ async def filter_patients_endpoint(criteria: FilterCriteria):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+@app.post("/upload-video/")
+async def upload_video(
+    patient_id: str = Form(...),
+    test_name: str = Form(...),
+    video: UploadFile = File(...)
+):
+    try:
+        now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"{patient_id}_{test_name}_{now_str}.mov"
+        filepath = os.path.join(RECORDINGS_DIR, filename)
+
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(video.file, buffer)
+
+        return {
+            "success": True,
+            "filename": filename,
+            "path": f"recordings/{filename}",
+            "patient_id": patient_id,
+            "test_name": test_name
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+@app.get("/videos/{patient_id}/{test_name}", response_model=Dict)
+def list_videos(patient_id: str, test_name: str):
+    try:
+        files = os.listdir(RECORDINGS_DIR)
+        matching = [
+            f for f in files
+            if f.startswith(f"{patient_id}_{test_name}_") and f.endswith(".mov")
+        ]
+        matching.sort(
+            key=lambda f: os.path.getmtime(os.path.join(RECORDINGS_DIR, f)),
+            reverse=True
+        )
+        return {"success": True, "videos": matching}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/recordings/{filename}", response_class=FileResponse)
+def get_recording_file(filename: str):
+    file_path = os.path.join(RECORDINGS_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(file_path, media_type="video/quicktime")
