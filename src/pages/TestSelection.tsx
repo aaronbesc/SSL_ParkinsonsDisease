@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, FileText, Activity, Video, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,49 +7,44 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Patient, Test, AVAILABLE_TESTS } from '@/types/patient';
-
-// Mock data
-const mockPatient: Patient = {
-  id: '1',
-  firstName: 'John',
-  lastName: 'Smith',
-  recordNumber: 'P001',
-  age: 65,
-  height: '5\'8"',
-  weight: '170 lbs',
-  labResults: 'Normal CBC, elevated dopamine markers',
-  doctorNotes: 'Patient shows mild tremor in right hand',
-  severity: 'Mild',
-  createdAt: new Date('2024-01-15'),
-  updatedAt: new Date('2024-01-20'),
-};
-
-const mockTestHistory: Test[] = [
-  {
-    id: 'test1',
-    patientId: '1',
-    name: 'Stand and Sit Assessment',
-    type: 'stand-and-sit',
-    date: new Date('2024-01-20'),
-    status: 'completed',
-  },
-  {
-    id: 'test2',
-    patientId: '1',
-    name: 'Palm Open Evaluation',
-    type: 'palm-open',
-    date: new Date('2024-01-18'),
-    status: 'completed',
-  },
-];
+import apiService from '@/services/api';
 
 const TestSelection = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [patient] = useState<Patient>(mockPatient);
-  const [testHistory] = useState<Test[]>(mockTestHistory);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [testHistory, setTestHistory] = useState<Test[]>([]);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingPatient, setLoadingPatient] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+      setLoadingPatient(true);
+      try {
+        const [patientRes, testsRes] = await Promise.all([
+          apiService.getPatient(id),
+          apiService.getPatientTests(id),
+        ]);
+        if (patientRes.success && patientRes.data) {
+          setPatient(patientRes.data);
+        } else {
+          setError(patientRes.error || 'Failed to fetch patient');
+        }
+        if (testsRes.success && testsRes.data) {
+          setTestHistory(testsRes.data);
+        } // else ignore for now
+      } catch (err: any) {
+        setError(err.message || 'Failed to connect to server');
+      } finally {
+        setLoadingPatient(false);
+      }
+    };
+    fetchData();
+  }, [id]);
 
   const handleTestSelection = (testId: string) => {
     setSelectedTests(prev => 
@@ -59,7 +54,7 @@ const TestSelection = () => {
     );
   };
 
-  const handleStartRecording = () => {
+  const handleStartRecording = async () => {
     if (selectedTests.length === 0) {
       toast({
         title: "No Tests Selected",
@@ -68,12 +63,48 @@ const TestSelection = () => {
       });
       return;
     }
-
-    // Create a test session with selected tests
-    const testId = `test-${Date.now()}`;
-    navigate(`/patient/${id}/video-recording/${testId}`, {
-      state: { selectedTests }
-    });
+    setLoading(true);
+    let allSuccess = true;
+    for (const testId of selectedTests) {
+      try {
+        const formData = new FormData();
+        formData.append("patient_id", id || '');
+        formData.append("test_name", testId);
+        const response = await fetch("http://localhost:8000/start-test/", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (!data.success) {
+          allSuccess = false;
+          toast({
+            title: `Failed to start ${testId}`,
+            description: data.error || data.stderr || 'Unknown error',
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: `Started ${testId} test`,
+            description: data.stdout ? data.stdout.slice(0, 200) : 'Test started.',
+          });
+        }
+      } catch (err) {
+        allSuccess = false;
+        toast({
+          title: `Error starting ${testId}`,
+          description: String(err),
+          variant: "destructive",
+        });
+      }
+    }
+    setLoading(false);
+    if (allSuccess) {
+      // Create a test session with selected tests
+      const testId = `test-${Date.now()}`;
+      navigate(`/patient/${id}/video-recording/${testId}`, {
+        state: { selectedTests }
+      });
+    }
   };
 
   const getSeverityColor = (severity: Patient['severity']) => {
@@ -84,6 +115,16 @@ const TestSelection = () => {
       default: return 'bg-muted text-muted-foreground';
     }
   };
+
+  if (loadingPatient) {
+    return <div className="min-h-screen flex items-center justify-center">Loading patient data...</div>;
+  }
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-destructive">{error}</div>;
+  }
+  if (!patient) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,9 +180,7 @@ const TestSelection = () => {
                     {patient.severity}
                   </Badge>
                 </div>
-                
                 <Separator />
-                
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-2">Recent Notes</p>
                   <div className="bg-muted p-3 rounded-md">
@@ -150,7 +189,6 @@ const TestSelection = () => {
                 </div>
               </CardContent>
             </Card>
-
             {/* Test History */}
             <Card>
               <CardHeader>
@@ -167,7 +205,7 @@ const TestSelection = () => {
                         <div>
                           <p className="font-medium text-sm">{test.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {test.date.toLocaleDateString()}
+                            {test.date ? new Date(test.date).toLocaleDateString() : ''}
                           </p>
                         </div>
                         <Badge variant="secondary" className="bg-success text-success-foreground">
@@ -185,7 +223,6 @@ const TestSelection = () => {
               </CardContent>
             </Card>
           </div>
-
           {/* Test Selection - Right Side */}
           <div className="lg:col-span-2 space-y-6">
             {/* Available Tests */}
@@ -230,7 +267,6 @@ const TestSelection = () => {
                 </div>
               </CardContent>
             </Card>
-
             {/* Recording Options */}
             <Card>
               <CardHeader>
@@ -240,14 +276,13 @@ const TestSelection = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <Button
                     onClick={handleStartRecording}
-                    disabled={selectedTests.length === 0}
+                    disabled={selectedTests.length === 0 || loading}
                     className="h-24 flex-col bg-[hsl(var(--secondary))] text-black hover:bg-[hsl(var(--primary-hover))] hover:text-white"
                   >
                     <Video className="h-8 w-8 mb-2" />
-                    <span className="font-semibold">Record New Video</span>
+                    <span className="font-semibold">{loading ? 'Starting Test...' : 'Record New Video'}</span>
                     <span className="text-xs opacity-90">Live recording with keypoints</span>
                   </Button>
-
                   <Button
                     variant="outline"
                     disabled={selectedTests.length === 0}
@@ -258,7 +293,6 @@ const TestSelection = () => {
                     <span className="text-xs text-muted-foreground">Upload existing video file</span>
                   </Button>
                 </div>
-
                 {selectedTests.length > 0 && (
                   <div className="mt-4 p-4 bg-medical-light rounded-lg">
                     <p className="text-sm font-medium text-medical-blue mb-2">

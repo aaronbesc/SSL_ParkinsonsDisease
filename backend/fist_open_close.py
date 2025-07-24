@@ -83,7 +83,7 @@ def plot_metrics(times, amp, speed, save_path=None):
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path)
-        print(f"→ Saved metrics plot to {save_path}")
+        print(f"-> Saved metrics plot to {save_path}")
     plt.show()
 
 def main():
@@ -104,7 +104,7 @@ def main():
     prev_state   = None
     count        = 0
 
-    print("→ Press 'q' to quit.")
+    print("-> Press 'q' to quit.")
 
     while True:
         ret, frame = cap.read()
@@ -131,11 +131,11 @@ def main():
                     landmarks_buf = []
                     count       = 0
                     prev_state  = "open"
-                    print(f"→ Detected open fist, recording {RECORD_SECONDS}s to {vid_path} ...")
+                    print(f"-> Detected open fist, recording {RECORD_SECONDS}s to {vid_path} ...")
         else:
             elapsed = time.time() - start_time
             if not res.multi_hand_landmarks:
-                print("→ Hand lost! Discarding clip.")
+                print("-> Hand lost! Discarding clip.")
                 out.release()
                 os.remove(vid_path)
                 recording = False
@@ -158,13 +158,13 @@ def main():
 
                 if elapsed >= RECORD_SECONDS:
                     out.release()
-                    print(f"→ Done! Saved video to {vid_path}")
-                    print(f"→ You did {count} open→closed cycles.")
+                    print(f"-> Done! Saved video to {vid_path}")
+                    print(f"-> You did {count} open->closed cycles.")
 
                     # save JSON
                     with open(json_path, "w") as f:
                         json.dump(landmarks_buf, f)
-                    print(f"→ Saved landmarks to {json_path}")
+                    print(f"-> Saved landmarks to {json_path}")
 
                     # compute & plot metrics
                     times, amp, speed = compute_metrics(landmarks_buf, FPS)

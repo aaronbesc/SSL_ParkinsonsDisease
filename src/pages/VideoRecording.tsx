@@ -178,6 +178,18 @@ const VideoRecording = () => {
           "Maintain steady arm position",
           "Continue for 30 seconds"
         ];
+      case 'finger-tapping':
+        return [
+          "Place your hand in view of the camera.",
+          "Tap your index finger and thumb together as quickly as possible.",
+          "Continue tapping for the duration of the test."
+        ];
+      case 'fist-open-close':
+        return [
+          "Place your hand in view of the camera.",
+          "Open your hand wide, then close it into a fist.",
+          "Repeat opening and closing your hand for the duration of the test."
+        ];
       default:
         return ["Follow the on-screen instructions"];
     }

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Depends, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Query, Depends, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from typing import Dict, List, Optional
@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 import os
 import shutil
+import uvicorn
+from subprocess import run, PIPE
 
 # setting up recording directory
 RECORDINGS_DIR = os.path.join(os.path.dirname(__file__), "recordings")
@@ -17,7 +19,8 @@ from patient_manager import (
     async_create_patient, async_get_patient_info,
     async_update_patient_info, async_delete_patient_record,
     async_get_all_patients_info, async_search_patients,
-    async_filter_patients
+    async_filter_patients,
+    TestHistoryManager
 )
 
 app = FastAPI(title="Patient Management API")
@@ -25,7 +28,14 @@ app = FastAPI(title="Patient Management API")
 # Configure CORS to allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # Adjust this in production to your frontend's URL
+    allow_origins=[
+        "http://localhost:8080",
+        "http://localhost:5173",  # Vite default port
+        "http://localhost:3000",  # React default port
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],  # Adjust this in production to your frontend's URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,8 +67,8 @@ class PatientResponse(BaseModel):
     patient_id: str
     name: str
     age: int
-    height: float
-    weight: float
+    height: str  # Changed to str to handle existing data
+    weight: str  # Changed to str to handle existing data
     lab_results: Dict
     doctors_notes: str
     severity: str
@@ -89,16 +99,35 @@ class FilterCriteria(BaseModel):
 async def root():
     return {"message": "Welcome to the Patient Management API"}
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "API is running"}
+
 
 @app.post("/patients/", response_model=Dict)
 async def create_patient(patient: PatientCreate):
+    # Convert types to match async_create_patient signature
+    # Handle height conversion - try to convert to float, keep as string if it fails
+    try:
+        height = float(patient.height) if patient.height is not None else 0.0
+    except ValueError:
+        height = 0.0  # Default if conversion fails
+    
+    # Handle weight conversion - try to convert to float, keep as string if it fails
+    try:
+        weight = float(patient.weight) if patient.weight is not None else 0.0
+    except ValueError:
+        weight = 0.0  # Default if conversion fails
+    
+    lab_results = patient.lab_results if patient.lab_results is not None else {}
+    doctors_notes = patient.doctors_notes if patient.doctors_notes is not None else ""
     result = await async_create_patient(
         name=patient.name,
         age=patient.age,
-        height=patient.height,
-        weight=patient.weight,
-        lab_results=patient.lab_results,
-        doctors_notes=patient.doctors_notes,
+        height=height,
+        weight=weight,
+        lab_results=lab_results,
+        doctors_notes=doctors_notes,
         severity=patient.severity
     )
 
@@ -130,11 +159,16 @@ async def get_patient(patient_id: str):
 async def update_patient(patient_id: str, patient_update: PatientUpdate):
     # Convert Pydantic model to dict, excluding None values
     update_data = {k: v for k, v in patient_update.dict().items() if v is not None}
+    
+    print(f"Update request for patient {patient_id}")
+    print(f"Update data received: {update_data}")
 
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid update data provided")
 
     result = await async_update_patient_info(patient_id, update_data)
+    
+    print(f"Update result: {result}")
 
     if not result.get("success", False):
         if "errors" in result:
@@ -213,3 +247,40 @@ def get_recording_file(filename: str):
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Video not found")
     return FileResponse(file_path, media_type="video/quicktime")
+
+@app.post("/start-test/")
+async def start_test(patient_id: str = Form(...), test_name: str = Form(...)):
+    """
+    Start a test by running the appropriate script based on test_name.
+    Returns output or error from the script.
+    """
+    script_map = {
+        "finger-tapping": os.path.join(os.path.dirname(__file__), "finger_tapping.py"),
+        "fist-open-close": os.path.join(os.path.dirname(__file__), "fist_open_close.py"),
+    }
+    script_path = script_map.get(test_name)
+    if not script_path or not os.path.exists(script_path):
+        return {"success": False, "error": f"Unknown or missing script for test: {test_name}"}
+
+    try:
+        result = run(["python", script_path], stdout=PIPE, stderr=PIPE, text=True, check=False)
+        return {
+            "success": result.returncode == 0,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/patients/{patient_id}/tests", response_model=Dict)
+async def get_patient_tests(patient_id: str):
+    thm = TestHistoryManager()
+    tests = thm.get_patient_tests(patient_id)
+    return {"success": True, "tests": tests}
+
+@app.post("/patients/{patient_id}/tests", response_model=Dict)
+async def add_patient_test(patient_id: str, test_data: dict = Body(...)):
+    thm = TestHistoryManager()
+    thm.add_patient_test(patient_id, test_data)
+    return {"success": True}

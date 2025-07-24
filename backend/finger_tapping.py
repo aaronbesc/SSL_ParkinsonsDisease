@@ -77,7 +77,7 @@ def plot_metrics(times, amp, speed, save_path=None):
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path)
-        print(f"→ Saved metrics plot to {save_path}")
+        print(f"-> Saved metrics plot to {save_path}")
     plt.show()
 
 def distance_state(distances, low_thresh=0.5, high_thresh=0.8):
@@ -114,7 +114,7 @@ def main():
     landmarks_buf = []
     tap_count     = 0
 
-    print("→ Press 'q' to quit.")
+    print("-> Press 'q' to quit.")
 
     while True:
         ret, frame = cap.read()
@@ -139,11 +139,11 @@ def main():
                     start_ts  = time.time()
                     landmarks_buf.clear()
                     tap_count = 0
-                    print(f"→ OK detected! Recording {RECORD_SECONDS}s to {vid_path} ...")
+                    print(f"-> OK detected! Recording {RECORD_SECONDS}s to {vid_path} ...")
         else:
             elapsed = time.time() - start_ts
             if not res.multi_hand_landmarks:
-                print("→ Hand lost! Discarding clip.")
+                print("-> Hand lost! Discarding clip.")
                 out.release()
                 os.remove(vid_path)
                 recording = False
@@ -166,17 +166,17 @@ def main():
 
                 if elapsed >= RECORD_SECONDS:
                     out.release()
-                    print(f"→ Done! Saved video to {vid_path}")
+                    print(f"-> Done! Saved video to {vid_path}")
 
                     # save JSON
                     with open(json_path, "w") as f:
                         json.dump(landmarks_buf, f)
-                    print(f"→ Saved landmarks to {json_path}")
+                    print(f"-> Saved landmarks to {json_path}")
 
                     # compute metrics & count taps
                     times, amp, speed = compute_metrics(landmarks_buf, FPS)
                     states = distance_state(amp)
-                    # count open→closed transitions
+                    # count open->closed transitions
                     prev = None
                     for st in states:
                         if prev == "open" and st == "closed":
@@ -184,7 +184,7 @@ def main():
                         if st in ("open","closed"):
                             prev = st
 
-                    print(f"→ You did {tap_count} thumb–index taps.")
+                    print(f"-> You did {tap_count} thumb-index taps.")
                     plot_path = json_path.replace(".json", "_metrics.png")
                     plot_metrics(times, amp, speed, save_path=plot_path)
                     break

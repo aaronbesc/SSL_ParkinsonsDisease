@@ -73,7 +73,7 @@ def get_recordings():
                 else:
                     states.append(None)
 
-            # Count open→closed transitions
+            # Count open->closed transitions
             prev = None
             for st in states:
                 if prev == "open" and st == "closed":

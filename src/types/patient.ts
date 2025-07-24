@@ -40,5 +40,7 @@ export interface Keypoint {
 
 export const AVAILABLE_TESTS = [
   { id: 'stand-and-sit', name: 'Stand and Sit Test', description: 'Measures motor function through standing and sitting movements' },
-  { id: 'palm-open', name: 'Palm Open Test', description: 'Evaluates hand motor function and dexterity' }
+  { id: 'palm-open', name: 'Palm Open Test', description: 'Evaluates hand motor function and dexterity' },
+  { id: 'finger-tapping', name: 'Finger Tapping Test', description: 'Measures rapid finger tapping for motor speed and coordination' },
+  { id: 'fist-open-close', name: 'Fist Open and Close Test', description: 'Assesses hand opening and closing cycles for bradykinesia' }
 ] as const;

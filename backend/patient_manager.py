@@ -3,7 +3,9 @@ import os
 import asyncio
 from datetime import datetime
 from typing import Dict, List, Optional, Union
+import threading
 
+TEST_HISTORY_FILE = os.path.join(os.path.dirname(__file__), 'test_history.json')
 
 class Patient:
     def __init__(self,
@@ -36,8 +38,8 @@ class Patient:
             "patient_id": self.patient_id,
             "name": self.name,
             "age": self.age,
-            "height": self.height,
-            "weight": self.weight,
+            "height": str(self.height),  # Convert to string for API response
+            "weight": str(self.weight),  # Convert to string for API response
             "lab_results": self.lab_results,
             "doctors_notes": self.doctors_notes,
             "severity": self.severity
@@ -46,11 +48,37 @@ class Patient:
     @classmethod
     def from_dict(cls, data: Dict) -> 'Patient':
         """Create a Patient object from dictionary data"""
+        # Handle height conversion from string to float
+        height_raw = data.get("height", 0.0)
+        if isinstance(height_raw, str):
+            # Try to extract numeric value from strings like "5'8"" or "170 cm"
+            try:
+                # Remove common units and extract numbers
+                height_str = str(height_raw).replace("'", "").replace('"', "").replace("cm", "").replace("lbs", "").strip()
+                height = float(height_str) if height_str else 0.0
+            except ValueError:
+                height = 0.0
+        else:
+            height = float(height_raw) if height_raw is not None else 0.0
+        
+        # Handle weight conversion from string to float
+        weight_raw = data.get("weight", 0.0)
+        if isinstance(weight_raw, str):
+            # Try to extract numeric value from strings like "145 lbs" or "70 kg"
+            try:
+                # Remove common units and extract numbers
+                weight_str = str(weight_raw).replace("lbs", "").replace("kg", "").strip()
+                weight = float(weight_str) if weight_str else 0.0
+            except ValueError:
+                weight = 0.0
+        else:
+            weight = float(weight_raw) if weight_raw is not None else 0.0
+        
         return cls(
             name=data.get("name", ""),
             age=data.get("age", 0),
-            height=data.get("height", 0.0),
-            weight=data.get("weight", 0.0),
+            height=height,
+            weight=weight,
             lab_results=data.get("lab_results", {}),
             doctors_notes=data.get("doctors_notes", ""),
             severity=data.get("severity", "low"),
@@ -145,15 +173,51 @@ class PatientManager:
                 errors["age"] = "Age must be between 0 and 120"
 
         if "height" in data:
-            if not isinstance(data["height"], (int, float)):
+            # Handle both string and numeric inputs
+            height_value = data["height"]
+            if isinstance(height_value, str):
+                # Try to convert string to float
+                try:
+                    # Extract numeric part from string (e.g., "170.0 cm" -> 170.0)
+                    import re
+                    numeric_match = re.search(r'(\d+\.?\d*)', height_value)
+                    if numeric_match:
+                        height_value = float(numeric_match.group(1))
+                    else:
+                        errors["height"] = "Height must contain a valid number"
+                        height_value = None
+                except ValueError:
+                    errors["height"] = "Height must be a valid number"
+                    height_value = None
+            elif not isinstance(height_value, (int, float)):
                 errors["height"] = "Height must be a number"
-            elif data["height"] < 0 or data["height"] > 300:
+                height_value = None
+            
+            if height_value is not None and (height_value < 0 or height_value > 300):
                 errors["height"] = "Height must be between 0 and 300 cm"
 
         if "weight" in data:
-            if not isinstance(data["weight"], (int, float)):
+            # Handle both string and numeric inputs
+            weight_value = data["weight"]
+            if isinstance(weight_value, str):
+                # Try to convert string to float
+                try:
+                    # Extract numeric part from string (e.g., "70.0 kg" -> 70.0)
+                    import re
+                    numeric_match = re.search(r'(\d+\.?\d*)', weight_value)
+                    if numeric_match:
+                        weight_value = float(numeric_match.group(1))
+                    else:
+                        errors["weight"] = "Weight must contain a valid number"
+                        weight_value = None
+                except ValueError:
+                    errors["weight"] = "Weight must be a valid number"
+                    weight_value = None
+            elif not isinstance(weight_value, (int, float)):
                 errors["weight"] = "Weight must be a number"
-            elif data["weight"] < 0 or data["weight"] > 500:
+                weight_value = None
+            
+            if weight_value is not None and (weight_value < 0 or weight_value > 500):
                 errors["weight"] = "Weight must be between 0 and 500 kg"
 
         if "severity" in data and data["severity"] not in ["low", "medium", "high"]:
@@ -211,13 +275,19 @@ class PatientManager:
 
     def update_patient(self, patient_id: str, updated_data: Dict) -> Dict:
         """Update a patient's information"""
+        print(f"Updating patient {patient_id} with data: {updated_data}")
+        
         patient = self.get_patient(patient_id)
         if not patient:
+            print(f"Patient {patient_id} not found")
             return {"success": False, "error": "Patient not found"}
+
+        print(f"Found patient: {patient.name}")
 
         # Validate the data
         validation_errors = self.validate_patient_data(updated_data)
         if validation_errors:
+            print(f"Validation errors: {validation_errors}")
             return {"success": False, "errors": validation_errors}
 
         try:
@@ -227,9 +297,29 @@ class PatientManager:
             if "age" in updated_data:
                 patient.age = updated_data["age"]
             if "height" in updated_data:
-                patient.height = updated_data["height"]
+                # Convert string to float if needed
+                height_value = updated_data["height"]
+                if isinstance(height_value, str):
+                    import re
+                    numeric_match = re.search(r'(\d+\.?\d*)', height_value)
+                    if numeric_match:
+                        patient.height = float(numeric_match.group(1))
+                    else:
+                        patient.height = 0.0  # Default fallback
+                else:
+                    patient.height = float(height_value)
             if "weight" in updated_data:
-                patient.weight = updated_data["weight"]
+                # Convert string to float if needed
+                weight_value = updated_data["weight"]
+                if isinstance(weight_value, str):
+                    import re
+                    numeric_match = re.search(r'(\d+\.?\d*)', weight_value)
+                    if numeric_match:
+                        patient.weight = float(numeric_match.group(1))
+                    else:
+                        patient.weight = 0.0  # Default fallback
+                else:
+                    patient.weight = float(weight_value)
             if "lab_results" in updated_data:
                 patient.lab_results = updated_data["lab_results"]
             if "doctors_notes" in updated_data:
@@ -545,3 +635,36 @@ async def async_filter_patients(criteria: Dict) -> Dict:
         "patients": [patient.to_dict() for patient in patients],
         "count": len(patients)
     }
+
+
+class TestHistoryManager:
+    _lock = threading.Lock()
+
+    def __init__(self, file_path: str = TEST_HISTORY_FILE):
+        self.file_path = file_path
+        self._load()
+
+    def _load(self):
+        if os.path.exists(self.file_path):
+            with open(self.file_path, 'r') as f:
+                self.data = json.load(f)
+        else:
+            self.data = {}
+
+    def _save(self):
+        with open(self.file_path, 'w') as f:
+            json.dump(self.data, f, indent=2)
+
+    def get_patient_tests(self, patient_id: str):
+        return self.data.get(patient_id, [])
+
+    def add_patient_test(self, patient_id: str, test_data: dict):
+        with self._lock:
+            self._load()
+            if patient_id not in self.data:
+                self.data[patient_id] = []
+            self.data[patient_id].append(test_data)
+            self._save()
+
+    def get_all_tests(self):
+        return self.data

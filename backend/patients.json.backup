@@ -3,8 +3,8 @@
     "patient_id": "cc1752784796",
     "name": "c c",
     "age": 12,
-    "height": "5'8\"",
-    "weight": "145 lbs",
+    "height": "58.0",
+    "weight": "145.0",
     "lab_results": {
       "notes": "c"
     },
@@ -15,8 +15,8 @@
     "patient_id": "cc1752784863",
     "name": "c c",
     "age": 12,
-    "height": "5'8\"",
-    "weight": "123 lbs",
+    "height": "58.0",
+    "weight": "123.0",
     "lab_results": {
       "notes": ""
     },
@@ -27,8 +27,8 @@
     "patient_id": "carlo1752789098",
     "name": "Carlos Mendez",
     "age": 12,
-    "height": "5'8\"",
-    "weight": "145 lbs",
+    "height": "58.0",
+    "weight": "145.0",
     "lab_results": {
       "notes": "a"
     },
@@ -39,8 +39,8 @@
     "patient_id": "ccarl1752789861",
     "name": "CCarlos MMendez",
     "age": 12,
-    "height": "5'8\"",
-    "weight": "145 lbs",
+    "height": "58.0",
+    "weight": "145.0",
     "lab_results": {
       "notes": "n/a"
     },
@@ -51,12 +51,44 @@
     "patient_id": "carlo1752802712",
     "name": "Carlos Mendez",
     "age": 12,
-    "height": "5'8\"",
-    "weight": "145 lbs",
+    "height": "58.0",
+    "weight": "145.0",
     "lab_results": {
       "notes": "n/a"
     },
     "doctors_notes": "n/a",
+    "severity": "medium"
+  },
+  "esteb1752803214": {
+    "patient_id": "esteb1752803214",
+    "name": "Esteban  Perez",
+    "age": 67,
+    "height": "52.0",
+    "weight": "450.0",
+    "lab_results": {
+      "notes": "test"
+    },
+    "doctors_notes": "test2",
+    "severity": "medium"
+  },
+  "erick1753317015": {
+    "patient_id": "erick1753317015",
+    "name": "Eric Krivoy",
+    "age": 120,
+    "height": "170.0",
+    "weight": "70.0",
+    "lab_results": {},
+    "doctors_notes": "",
+    "severity": "medium"
+  },
+  "erice1753317634": {
+    "patient_id": "erice1753317634",
+    "name": "eric el loco",
+    "age": 42,
+    "height": "170.0",
+    "weight": "70.0",
+    "lab_results": {},
+    "doctors_notes": "",
     "severity": "medium"
   }
 }

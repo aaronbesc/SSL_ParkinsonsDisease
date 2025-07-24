@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Patient } from '@/types/patient';
+import apiService from '@/services/api';
 
 const PatientForm = () => {
   const navigate = useNavigate();
@@ -27,88 +28,110 @@ const PatientForm = () => {
     doctorNotes: '',
     severity: '' as Patient['severity'],
   });
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  // Load patient data if editing
+  useEffect(() => {
+    if (isEditing && id) {
+      loadPatientData();
+    }
+  }, [isEditing, id]);
 
-  if (!formData.firstName || !formData.lastName || !formData.recordNumber || !formData.age || !formData.severity) {
-    toast({
-      title: "Validation Error",
-      description: "Please fill in all required fields.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  const payload = {
-    name: `${formData.firstName} ${formData.lastName}`,
-    age: Number(formData.age),
-    height: formData.height,  // now treated as string
-    weight: formData.weight,  // now treated as string
-    lab_results: {
-      notes: formData.labResults || "",
-    },
-    doctors_notes: formData.doctorNotes || "",
-    severity: formData.severity, // should already be "low", "medium", or "high"
+  const loadPatientData = async () => {
+    try {
+      const response = await apiService.getPatient(id!);
+      if (response.success && response.data) {
+        const patient = response.data;
+        setFormData({
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          recordNumber: patient.recordNumber,
+          age: patient.age.toString(),
+          height: patient.height,
+          weight: patient.weight,
+          labResults: patient.labResults,
+          doctorNotes: patient.doctorNotes,
+          severity: patient.severity,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load patient data",
+        variant: "destructive",
+      });
+    }
   };
 
-  try {
-    const url = isEditing
-      ? `http://localhost:8000/patients/${id}`
-      : `http://localhost:8000/patients/`;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-    const method = isEditing ? 'PUT' : 'POST';
-
-    const res = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw data;
+    if (!formData.firstName || !formData.lastName || !formData.recordNumber || !formData.age || !formData.severity) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
     }
 
-    toast({
-      title: isEditing ? "Patient Updated" : "Patient Created",
-      description: `${formData.firstName} ${formData.lastName} has been ${isEditing ? 'updated' : 'added'}.`,
-    });
+    try {
+      const patientData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        recordNumber: formData.recordNumber,
+        age: parseInt(formData.age),
+        height: formData.height || '170 cm',
+        weight: formData.weight || '70 kg',
+        labResults: formData.labResults || '{}',
+        doctorNotes: formData.doctorNotes || '',
+        severity: formData.severity,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    navigate(isEditing ? `/patient/${id}` : '/');
-  } catch (error) {
-    console.error("Submission error:", error);
+      console.log('Saving patient with data:', patientData);
+      console.log('Is editing:', isEditing, 'ID:', id);
 
-    let message = 'Unknown error';
-
-    if (typeof error === 'string') {
-      message = error;
-    } else if (error instanceof Error) {
-      message = error.message;
-    } else if (typeof error === 'object' && error !== null) {
-      if ('detail' in error && Array.isArray(error.detail)) {
-        message = error.detail
-          .map((e: any) => `${e.loc?.join('.') || 'field'}: ${e.msg}`)
-          .join('\n');
+      let response;
+      if (isEditing && id) {
+        response = await apiService.updatePatient(id, patientData);
       } else {
-        message = JSON.stringify(error);
+        response = await apiService.createPatient(patientData);
       }
-    }
+      
+      console.log('API response:', response);
 
-    toast({
-      title: "Error",
-      description: message,
-      variant: "destructive",
-    });
-  }
-};
+      if (response.success) {
+        toast({
+          title: isEditing ? "Patient Updated" : "Patient Created",
+          description: `${formData.firstName} ${formData.lastName} has been ${isEditing ? 'updated' : 'added'} successfully.`,
+        });
+        navigate(isEditing ? `/patient/${id}` : '/');
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || "Failed to save patient",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to connect to the server",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -226,9 +249,9 @@ const PatientForm = () => {
                       <SelectValue placeholder="Select severity level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Mild</SelectItem>
-                      <SelectItem value="medium">Moderate</SelectItem>
-                      <SelectItem value="high">Severe</SelectItem>
+                      <SelectItem value="Mild">Mild</SelectItem>
+                      <SelectItem value="Moderate">Moderate</SelectItem>
+                      <SelectItem value="Severe">Severe</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -260,13 +283,17 @@ const PatientForm = () => {
                 {/* Submit Button */}
                 <div className="flex justify-end space-x-4 pt-6">
                   <Link to={isEditing ? `/patient/${id}` : '/'}>
-                    <Button variant="outline">
+                    <Button variant="outline" disabled={loading}>
                       Cancel
                     </Button>
                   </Link>
-                  <Button type="submit" className="bg-gradient-primary hover:bg-primary-hover">
-                    <Save className="mr-2 h-4 w-4" />
-                    {isEditing ? 'Update Patient' : 'Create Patient'}
+                  <Button type="submit" className="bg-gradient-primary hover:bg-primary-hover" disabled={loading}>
+                    {loading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    {loading ? 'Saving...' : (isEditing ? 'Update Patient' : 'Create Patient')}
                   </Button>
                 </div>
               </form>
