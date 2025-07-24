@@ -70,5 +70,17 @@
     },
     "doctors_notes": "test2",
     "severity": "medium"
+  },
+  "bobdi1753163831": {
+    "patient_id": "bobdi1753163831",
+    "name": "Bob Dillian",
+    "age": 22,
+    "height": "5'8\"",
+    "weight": "145 lbs",
+    "lab_results": {
+      "notes": "n/a"
+    },
+    "doctors_notes": "n/a",
+    "severity": "medium"
   }
 }

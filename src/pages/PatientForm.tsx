@@ -81,7 +81,7 @@ const PatientForm = () => {
       title: isEditing ? "Patient Updated" : "Patient Created",
       description: `${formData.firstName} ${formData.lastName} has been ${isEditing ? 'updated' : 'added'}.`,
     });
-
+    
     navigate(isEditing ? `/patient/${id}` : '/');
   } catch (error) {
     console.error("Submission error:", error);

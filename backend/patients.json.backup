@@ -58,5 +58,17 @@
     },
     "doctors_notes": "n/a",
     "severity": "medium"
+  },
+  "esteb1752803214": {
+    "patient_id": "esteb1752803214",
+    "name": "Esteban  Perez",
+    "age": 67,
+    "height": "5'2",
+    "weight": "450",
+    "lab_results": {
+      "notes": "test"
+    },
+    "doctors_notes": "test2",
+    "severity": "medium"
   }
 }
