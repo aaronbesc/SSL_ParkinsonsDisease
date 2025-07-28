@@ -82,5 +82,17 @@
     },
     "doctors_notes": "n/a",
     "severity": "medium"
+  },
+  "johnd1753731529": {
+    "patient_id": "johnd1753731529",
+    "name": "John Doe",
+    "age": 68,
+    "height": "5'8\"",
+    "weight": "160 lbs",
+    "lab_results": {
+      "notes": "n/a"
+    },
+    "doctors_notes": "n/a",
+    "severity": "medium"
   }
 }
