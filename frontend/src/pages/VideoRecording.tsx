@@ -107,7 +107,7 @@ const VideoRecording = () => {
       formData.append("video", blob, "recording.webm");
 
       try {
-        const response = await fetch('http://localhost:8000/upload-video/', {
+        const response = await fetch('/api/upload-video/', {
           method: 'POST',
           body: formData,
         });

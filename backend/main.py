@@ -25,7 +25,7 @@ app = FastAPI(title="Patient Management API")
 # Configure CORS to allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # Adjust this in production to your frontend's URL
+    allow_origins=["http://localhost:5173"],  # Adjust this in production to your frontend's URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
