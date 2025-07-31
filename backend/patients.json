@@ -90,5 +90,15 @@
     "lab_results": {},
     "doctors_notes": "",
     "severity": "medium"
+  },
+  "carlo1753330385": {
+    "patient_id": "carlo1753330385",
+    "name": "carlosss sss",
+    "age": 80,
+    "height": "170.0",
+    "weight": "70.0",
+    "lab_results": {},
+    "doctors_notes": "",
+    "severity": "medium"
   }
 }

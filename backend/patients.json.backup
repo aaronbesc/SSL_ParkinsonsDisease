@@ -85,6 +85,16 @@
     "patient_id": "erice1753317634",
     "name": "eric el loco",
     "age": 42,
+    "height": "180.0",
+    "weight": "70.0",
+    "lab_results": {},
+    "doctors_notes": "",
+    "severity": "medium"
+  },
+  "carlo1753330385": {
+    "patient_id": "carlo1753330385",
+    "name": "carlosss sss",
+    "age": 99,
     "height": "170.0",
     "weight": "70.0",
     "lab_results": {},
