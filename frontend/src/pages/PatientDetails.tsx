@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Patient, Test } from '@/types/patient';
-import apiService from '@/services/api';
 
 
 // Mock data - replace with actual data fetching
@@ -59,32 +58,47 @@ const PatientDetails = () => {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tests, setTests] = useState<Test[]>([]);
+  const [tests, setTests] = useState<Test[]>([]); // Placeholder – replace with real API if available
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      setLoading(true);
+    const fetchPatient = async () => {
       try {
-        const [patientRes, testsRes] = await Promise.all([
-          apiService.getPatient(id),
-          apiService.getPatientTests(id),
-        ]);
-        if (patientRes.success && patientRes.data) {
-          setPatient(patientRes.data);
-        } else {
-          setError(patientRes.error || 'Failed to fetch patient');
+        const response = await fetch(`http://localhost:8000/patients/${id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Failed to fetch patient');
         }
-        if (testsRes.success && testsRes.data) {
-          setTests(testsRes.data);
-        }
+
+        const [firstName, lastName] = data.patient.name.split(' ');
+
+        setPatient({
+          id: data.patient.patient_id,
+          firstName,
+          lastName,
+          recordNumber: '', // Add logic if your backend supports it
+          age: data.patient.age,
+          height: `${data.patient.height}`,
+          weight: `${data.patient.weight}`,
+          labResults: data.patient.lab_results?.notes || '',
+          doctorNotes: data.patient.doctors_notes || '',
+          severity:
+            data.patient.severity === 'low'
+              ? 'Mild'
+              : data.patient.severity === 'medium'
+              ? 'Moderate'
+              : 'Severe',
+          createdAt: new Date(), // Optional: replace with actual timestamps
+          updatedAt: new Date(),
+        });
       } catch (err: any) {
-        setError(err.message || 'Failed to connect to server');
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    fetchPatient();
   }, [id]);
 
   const getSeverityColor = (severity: Patient['severity']) => {
@@ -156,7 +170,7 @@ const PatientDetails = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Link to={`/patient-form/${id}`}>
+              <Link to={`/patient/${id}/edit`}>
                 <Button variant="outline">
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Patient
