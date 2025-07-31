@@ -63,13 +63,19 @@
     "patient_id": "esteb1752803214",
     "name": "Esteban  Perez",
     "age": 67,
+<<<<<<< HEAD
     "height": "52.0",
     "weight": "450.0",
+=======
+    "height": "5'2",
+    "weight": "450",
+>>>>>>> usingDocker
     "lab_results": {
       "notes": "test"
     },
     "doctors_notes": "test2",
     "severity": "medium"
+<<<<<<< HEAD
   },
   "erick1753317015": {
     "patient_id": "erick1753317015",
@@ -90,5 +96,7 @@
     "lab_results": {},
     "doctors_notes": "",
     "severity": "medium"
+=======
+>>>>>>> usingDocker
   }
 }

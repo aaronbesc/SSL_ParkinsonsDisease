@@ -66,7 +66,7 @@ const VideoSummary = () => {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/videos/${id}/${testId}`);
+        const res = await fetch(`/api/videos/${id}/${testId}`);
         const data = await res.json();
         if (data.success && data.videos.length > 0) {
           setVideoList(data.videos);
@@ -126,7 +126,7 @@ const VideoSummary = () => {
             <CardContent>
               {selectedVideo ? (
                 <video controls className="w-full rounded-lg aspect-video mb-4">
-                  <source src={`http://localhost:8000/recordings/${selectedVideo}`} type="video/quicktime" />
+                  <source src={`/api/recordings/${selectedVideo}`} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               ) : (
