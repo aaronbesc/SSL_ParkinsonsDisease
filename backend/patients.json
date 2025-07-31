@@ -71,6 +71,7 @@
     "doctors_notes": "test2",
     "severity": "medium"
   },
+<<<<<<< HEAD
   "erick1753317015": {
     "patient_id": "erick1753317015",
     "name": "Eric Krivoy",
@@ -89,6 +90,18 @@
     "weight": "70.0",
     "lab_results": {},
     "doctors_notes": "",
+=======
+  "johnd1753730395": {
+    "patient_id": "johnd1753730395",
+    "name": "John Doe",
+    "age": 78,
+    "height": "5'9\"",
+    "weight": "180 lbs",
+    "lab_results": {
+      "notes": "n/a"
+    },
+    "doctors_notes": "n/a",
+>>>>>>> usingDocker
     "severity": "medium"
   },
   "carlo1753330385": {
