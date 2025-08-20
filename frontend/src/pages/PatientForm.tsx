@@ -287,7 +287,7 @@ const PatientForm = () => {
                       Cancel
                     </Button>
                   </Link>
-                  <Button type="submit" className="bg-gradient-primary hover:bg-primary-hover" disabled={loading}>
+                  <Button type="submit" className="bg-primary hover:bg-primary-hover text-primary-foreground" disabled={loading}>
                     {loading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (

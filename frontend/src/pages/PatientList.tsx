@@ -246,7 +246,7 @@ const PatientList = () => {
                       <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                         Cancel
                       </Button>
-                      <Button type="submit" className="bg-gradient-primary hover:bg-primary-hover">
+                      <Button type="submit" className="bg-primary hover:bg-gradient-primary-hover">
                         <UserPlus className="mr-2 h-4 w-4" />
                         Add Patient
                       </Button>

@@ -63,20 +63,15 @@
     "patient_id": "esteb1752803214",
     "name": "Esteban  Perez",
     "age": 67,
-<<<<<<< HEAD
     "height": "52.0",
     "weight": "450.0",
-=======
-    "height": "5'2",
-    "weight": "450",
->>>>>>> usingDocker
     "lab_results": {
       "notes": "test"
     },
     "doctors_notes": "test2",
     "severity": "medium"
-<<<<<<< HEAD
   },
+<<<<<<< HEAD
   "erick1753317015": {
     "patient_id": "erick1753317015",
     "name": "Eric Krivoy",
@@ -95,18 +90,28 @@
     "weight": "70.0",
     "lab_results": {},
     "doctors_notes": "",
+=======
+  "johnd1753730395": {
+    "patient_id": "johnd1753730395",
+    "name": "John Doe",
+    "age": 78,
+    "height": "5'9\"",
+    "weight": "180 lbs",
+    "lab_results": {
+      "notes": "n/a"
+    },
+    "doctors_notes": "n/a",
+>>>>>>> usingDocker
     "severity": "medium"
   },
   "carlo1753330385": {
     "patient_id": "carlo1753330385",
     "name": "carlosss sss",
-    "age": 99,
+    "age": 80,
     "height": "170.0",
     "weight": "70.0",
     "lab_results": {},
     "doctors_notes": "",
     "severity": "medium"
-=======
->>>>>>> usingDocker
   }
 }
