@@ -94,5 +94,17 @@
     },
     "doctors_notes": "n/a",
     "severity": "medium"
+  },
+  "carlo1755702847": {
+    "patient_id": "carlo1755702847",
+    "name": "Carlos Mendez",
+    "age": 42,
+    "height": "5'8\"",
+    "weight": "170 lbs",
+    "lab_results": {
+      "notes": "n/a"
+    },
+    "doctors_notes": "n/a",
+    "severity": "medium"
   }
 }
